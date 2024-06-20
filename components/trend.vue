@@ -15,9 +15,10 @@
           class="w-6 h-6"
           :class="{ green: trendingUp, red: !trendingUp }"
         />
-        <div class="text-gray-500 dark:text-gray-400">
-          {{ percentageTrend }} vs last period
-        </div>
+        <div
+          class="text-gray-500 dark:text-gray-400"
+          v-html="percentageTrend"
+        ></div>
       </div>
     </div>
   </div>
@@ -41,7 +42,8 @@ const icon = computed(() =>
 
 const { currency } = useCurrency(props.amount);
 const percentageTrend = computed(() => {
-  if (props.amount === 0 || props.lastAmount === 0) return "&#8734; %";
+  if (props.amount === 0 || props.lastAmount === 0)
+    return "&#8734; % vs last period";
   const bigger = Math.max(props.amount, props.lastAmount);
   const lower = Math.min(props.amount, props.lastAmount);
 

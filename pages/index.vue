@@ -12,39 +12,60 @@
     <Trend
       color="green"
       title="Income"
-      :amount="4000"
+      :amount="incomeTotal"
       :last-amount="3000"
-      :loading="false"
+      :loading="isLoading"
     />
     <Trend
       color="green"
       title="Expense"
-      :amount="4000"
+      :amount="expenseTotal"
       :last-amount="3000"
-      :loading="false"
+      :loading="isLoading"
     />
     <Trend
       color="green"
       title="Investments"
       :amount="4000"
       :last-amount="3000"
-      :loading="false"
+      :loading="isLoading"
     />
     <Trend
       color="green"
       title="Savings"
       :amount="4000"
       :last-amount="3000"
-      :loading="false"
+      :loading="isLoading"
     />
   </section>
-  <section>
+
+  <section class="flex justify-between mb-10">
+    <div>
+      <h2 class="text-2xl font-extrabold">Transactions</h2>
+      <div class="text-gray-500 dark:text-gray-400">
+        You have {{ incomeCount }} incomes and {{ expenseCount }} expenses this
+        period
+      </div>
+    </div>
+    <div>
+      <TransactionModel v-model="isOpen" @add-transaction="addTransaction" />
+      <UButton
+        icon="i-heroicons-plus-circle"
+        color="white"
+        variant="solid"
+        class=""
+        label="Add"
+        @click="isOpen = true"
+      ></UButton>
+    </div>
+  </section>
+
+  <section v-if="!isLoading">
     <div
       v-for="(transactionsOnDay, date) in transactionsGroupedByDate"
       :key="date"
       class="mb-10"
     >
-      {{ typeof date }}
       <DailyTransactionSummary :date="date" :transactions="transactionsOnDay" />
       <Transaction
         v-for="transaction in transactionsOnDay"
@@ -56,6 +77,9 @@
     <!-- <Transaction />
     <Transaction />
     <Transaction /> -->
+  </section>
+  <section v-else>
+    <USkeleton class="h-8 w-full mb-2" v-for="i in 4" :key="i" />
   </section>
 </template>
 
@@ -71,9 +95,32 @@ const selctedView = ref(transactionView[1]);
 const supabase = useSupabaseClient();
 const transactionsStore = useTransactionsStore();
 
+const isLoading = ref<boolean>(false);
+
+const isOpen = ref<boolean>(false);
+
+const income = computed(() =>
+  transactions.value.filter((t) => t.type === "Income")
+);
+const expense = computed(() =>
+  transactions.value.filter((t) => t.type === "Expense")
+);
+
+const incomeCount = computed(() => income.value.length);
+const expenseCount = computed(() => expense.value.length);
+
+const incomeTotal = computed(() =>
+  income.value.reduce((sum, trans) => sum + trans.amount, 0)
+);
+const expenseTotal = computed(() =>
+  expense.value.reduce((sum, trans) => sum + trans.amount, 0)
+);
+
 const transactions = computed(() => transactionsStore.transactions);
 await useAsyncData("transactions", async () => {
+  isLoading.value = true;
   await transactionsStore.fetchTransactions();
+  isLoading.value = false;
 });
 
 const transactionsGroupedByDate = computed(() => {
@@ -89,7 +136,13 @@ const transactionsGroupedByDate = computed(() => {
   return grouped;
 });
 
-const deleteTransaction = (id: string) => {
+const deleteTransaction = async (id: string) => {
   transactionsStore.deleteTransaction(id);
+  isLoading.value = true;
+  await transactionsStore.fetchTransactions();
+  isLoading.value = false;
+};
+const addTransaction = async (data) => {
+  transactionsStore.createTransaction(data);
 };
 </script>
